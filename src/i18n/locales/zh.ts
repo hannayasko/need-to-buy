@@ -1,0 +1,55 @@
+import type { DeepPartial, Messages } from "../types";
+
+export const zh: DeepPartial<Messages> = {
+  common: {
+    close: "关闭",
+  },
+  app: {
+    name: "Need to Buy",
+    tagline: "用于日常补货的共享清单。",
+  },
+  nav: {
+    home: "首页",
+    language: "语言",
+  },
+  home: {
+    eyebrow: "模拟工作区",
+    title: "笔记",
+    intro: "打开模拟笔记，在接入存储之前先整理清单。",
+    noteLabel: "模拟笔记",
+    openNote: "打开笔记",
+    itemPreview: "清单预览",
+    pinned: "已置顶",
+    shared: "共享",
+    updatedToday: "今天已更新",
+    actions: "操作",
+  },
+  editor: {
+    backHome: "返回笔记",
+    mockBadge: "模拟笔记",
+    titleLabel: "笔记标题",
+    listLabel: "可编辑清单",
+    itemPlaceholder: "清单项目",
+    addItem: "添加项目",
+    formatting: "格式",
+    showFormatting: "显示格式",
+    hideFormatting: "隐藏格式",
+    checkboxList: "复选清单",
+    bulletList: "项目符号清单",
+    decreaseFont: "减小字号",
+    increaseFont: "增大字号",
+    underline: "下划线",
+    fontSize: "字号",
+    listMode: "清单模式",
+    checklistMode: "复选",
+    bulletMode: "项目符号",
+    panelHint: "格式只会影响这条模拟笔记。",
+    checked: "已选中",
+    unchecked: "未选中",
+  },
+  mockNote: {
+    title: "周末采购",
+    summary: "下一次去商店前的小清单。",
+    items: ["牛奶", "面包", "苹果"],
+  },
+};

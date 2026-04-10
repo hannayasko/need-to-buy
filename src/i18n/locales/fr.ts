@@ -1,0 +1,55 @@
+import type { DeepPartial, Messages } from "../types";
+
+export const fr: DeepPartial<Messages> = {
+  common: {
+    close: "Fermer",
+  },
+  app: {
+    name: "Need to Buy",
+    tagline: "Listes partagées pour les courses du quotidien.",
+  },
+  nav: {
+    home: "Accueil",
+    language: "Langue",
+  },
+  home: {
+    eyebrow: "Espace de test",
+    title: "Notes",
+    intro: "Ouvrez la note de test et ajustez la liste avant l'ajout du stockage.",
+    noteLabel: "Note de test",
+    openNote: "Ouvrir la note",
+    itemPreview: "Aperçu de la liste",
+    pinned: "Epinglee",
+    shared: "Partagee",
+    updatedToday: "Mise a jour aujourd'hui",
+    actions: "Actions",
+  },
+  editor: {
+    backHome: "Retour aux notes",
+    mockBadge: "Note de test",
+    titleLabel: "Titre de la note",
+    listLabel: "Liste modifiable",
+    itemPlaceholder: "Élément de liste",
+    addItem: "Ajouter un élément",
+    formatting: "Mise en forme",
+    showFormatting: "Afficher la mise en forme",
+    hideFormatting: "Masquer la mise en forme",
+    checkboxList: "Liste à cocher",
+    bulletList: "Liste à puces",
+    decreaseFont: "Réduire le texte",
+    increaseFont: "Agrandir le texte",
+    underline: "Souligner",
+    fontSize: "Taille du texte",
+    listMode: "Mode de liste",
+    checklistMode: "Checklist",
+    bulletMode: "Puces",
+    panelHint: "La mise en forme ne concerne que cette note de test.",
+    checked: "Coché",
+    unchecked: "Non coché",
+  },
+  mockNote: {
+    title: "Courses du week-end",
+    summary: "Une courte liste pour le prochain passage au magasin.",
+    items: ["Lait", "Pain", "Pommes"],
+  },
+};

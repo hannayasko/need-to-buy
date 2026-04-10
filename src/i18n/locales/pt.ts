@@ -1,0 +1,55 @@
+import type { DeepPartial, Messages } from "../types";
+
+export const pt: DeepPartial<Messages> = {
+  common: {
+    close: "Fechar",
+  },
+  app: {
+    name: "Need to Buy",
+    tagline: "Listas partilhadas para compras do dia a dia.",
+  },
+  nav: {
+    home: "Início",
+    language: "Idioma",
+  },
+  home: {
+    eyebrow: "Espaço de teste",
+    title: "Notas",
+    intro: "Abra a nota de teste e ajuste a lista antes de adicionar armazenamento.",
+    noteLabel: "Nota de teste",
+    openNote: "Abrir nota",
+    itemPreview: "Pré-visualização da lista",
+    pinned: "Fixada",
+    shared: "Partilhada",
+    updatedToday: "Atualizada hoje",
+    actions: "Acoes",
+  },
+  editor: {
+    backHome: "Voltar às notas",
+    mockBadge: "Nota de teste",
+    titleLabel: "Título da nota",
+    listLabel: "Lista editável",
+    itemPlaceholder: "Item da lista",
+    addItem: "Adicionar item",
+    formatting: "Formatação",
+    showFormatting: "Mostrar formatação",
+    hideFormatting: "Ocultar formatação",
+    checkboxList: "Lista de verificação",
+    bulletList: "Lista com marcadores",
+    decreaseFont: "Diminuir texto",
+    increaseFont: "Aumentar texto",
+    underline: "Sublinhar",
+    fontSize: "Tamanho do texto",
+    listMode: "Modo da lista",
+    checklistMode: "Checklist",
+    bulletMode: "Marcadores",
+    panelHint: "A formatação afeta apenas esta nota de teste.",
+    checked: "Marcado",
+    unchecked: "Desmarcado",
+  },
+  mockNote: {
+    title: "Compras do fim de semana",
+    summary: "Uma lista curta para a próxima ida à loja.",
+    items: ["Leite", "Pão", "Maçãs"],
+  },
+};

@@ -1,0 +1,55 @@
+import type { DeepPartial, Messages } from "../types";
+
+export const hi: DeepPartial<Messages> = {
+  common: {
+    close: "बंद करें",
+  },
+  app: {
+    name: "Need to Buy",
+    tagline: "रोजमर्रा की खरीदारी के लिए साझा सूचियां.",
+  },
+  nav: {
+    home: "होम",
+    language: "भाषा",
+  },
+  home: {
+    eyebrow: "मॉक वर्कस्पेस",
+    title: "नोट्स",
+    intro: "स्टोरेज जोड़ने से पहले मॉक नोट खोलें और सूची तैयार करें.",
+    noteLabel: "मॉक नोट",
+    openNote: "नोट खोलें",
+    itemPreview: "सूची पूर्वावलोकन",
+    pinned: "पिन किया गया",
+    shared: "साझा",
+    updatedToday: "आज अपडेट किया गया",
+    actions: "कार्रवाइयां",
+  },
+  editor: {
+    backHome: "नोट्स पर वापस",
+    mockBadge: "मॉक नोट",
+    titleLabel: "नोट शीर्षक",
+    listLabel: "संपादन योग्य सूची",
+    itemPlaceholder: "सूची आइटम",
+    addItem: "आइटम जोड़ें",
+    formatting: "फॉर्मेटिंग",
+    showFormatting: "फॉर्मेटिंग दिखाएं",
+    hideFormatting: "फॉर्मेटिंग छिपाएं",
+    checkboxList: "चेकबॉक्स सूची",
+    bulletList: "बुलेट सूची",
+    decreaseFont: "टेक्स्ट छोटा करें",
+    increaseFont: "टेक्स्ट बड़ा करें",
+    underline: "रेखांकित करें",
+    fontSize: "टेक्स्ट आकार",
+    listMode: "सूची मोड",
+    checklistMode: "चेकलिस्ट",
+    bulletMode: "बुलेट",
+    panelHint: "फॉर्मेटिंग केवल इस मॉक नोट पर लागू होती है.",
+    checked: "चेक किया गया",
+    unchecked: "चेक नहीं किया गया",
+  },
+  mockNote: {
+    title: "वीकेंड किराना",
+    summary: "अगली दुकान यात्रा के लिए एक छोटी सूची.",
+    items: ["दूध", "ब्रेड", "सेब"],
+  },
+};

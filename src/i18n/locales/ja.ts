@@ -1,0 +1,55 @@
+import type { DeepPartial, Messages } from "../types";
+
+export const ja: DeepPartial<Messages> = {
+  common: {
+    close: "閉じる",
+  },
+  app: {
+    name: "Need to Buy",
+    tagline: "日々の買い足しを共有リストで。",
+  },
+  nav: {
+    home: "ホーム",
+    language: "言語",
+  },
+  home: {
+    eyebrow: "モックワークスペース",
+    title: "ノート",
+    intro: "保存機能を追加する前に、モックノートを開いてリストを整えましょう。",
+    noteLabel: "モックノート",
+    openNote: "ノートを開く",
+    itemPreview: "リストのプレビュー",
+    pinned: "固定済み",
+    shared: "共有",
+    updatedToday: "今日更新",
+    actions: "操作",
+  },
+  editor: {
+    backHome: "ノートに戻る",
+    mockBadge: "モックノート",
+    titleLabel: "ノートのタイトル",
+    listLabel: "編集できるリスト",
+    itemPlaceholder: "リスト項目",
+    addItem: "項目を追加",
+    formatting: "書式",
+    showFormatting: "書式を表示",
+    hideFormatting: "書式を隠す",
+    checkboxList: "チェックリスト",
+    bulletList: "箇条書き",
+    decreaseFont: "文字を小さく",
+    increaseFont: "文字を大きく",
+    underline: "下線",
+    fontSize: "文字サイズ",
+    listMode: "リスト形式",
+    checklistMode: "チェック",
+    bulletMode: "箇条書き",
+    panelHint: "書式はこのモックノートにだけ反映されます。",
+    checked: "チェック済み",
+    unchecked: "未チェック",
+  },
+  mockNote: {
+    title: "週末の買い物",
+    summary: "次のお店に行く前の短いリスト。",
+    items: ["牛乳", "パン", "りんご"],
+  },
+};
