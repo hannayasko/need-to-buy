@@ -53,6 +53,11 @@ export type Messages = {
     errorTitle: string;
     errorBody: string;
     devModeHint: string;
+    guestModeHint: string;
+    emptyStateGuestHint: string;
+    shareRequiresAccountTitle: string;
+    shareRequiresAccountBody: string;
+    shareRequiresAccountButton: string;
   };
   editor: {
     backHome: string;
@@ -111,6 +116,16 @@ export type Messages = {
     validationEmailInvalid: string;
     validationPasswordRequired: string;
     validationPasswordLength: string;
+  };
+  settings: {
+    account: string;
+    accountReady: string;
+    button: string;
+    guestBody: string;
+    language: string;
+    signInCta: string;
+    theme: string;
+    title: string;
   };
   mockNote: {
     title: string;

@@ -11,25 +11,37 @@ import {
 } from "react";
 import { useAuth } from "@/auth/auth-provider";
 import { supabase } from "@/lib/supabase";
+import { createGuestNote, loadGuestNotes, saveGuestNotes } from "./guest-note-store";
+import {
+  buildNoteItemUpsertInput,
+  groupNoteItemsByNoteId,
+  noteItemRecordSelect,
+  normalizeCloudNote,
+} from "./note-item-records";
 import {
   buildCreateNoteInput,
   buildNoteUpdateInput,
   noteRecordSelect,
-  normalizeNoteRow,
   sortNotes,
 } from "./note-records";
-import type { Note, NoteRecord, NotesStatus } from "./types";
+import type {
+  Note,
+  NoteItemRecord,
+  NoteRecord,
+  NotesStatus,
+  NotesStorageMode,
+} from "./types";
 
 type NotesContextValue = {
   createNote: (title: string) => Promise<string | null>;
   deleteNote: (noteId: string) => Promise<void>;
   errorMessage: string | null;
-  isUsingDevUser: boolean;
   notes: Note[];
   reloadNotes: () => Promise<void>;
   renameNote: (noteId: string, title: string) => Promise<void>;
   setNoteShared: (noteId: string, shared: boolean) => void;
   status: NotesStatus;
+  storageMode: NotesStorageMode;
   togglePinned: (noteId: string) => Promise<void>;
   updateNote: (noteId: string, updater: (note: Note) => Note) => void;
 };
@@ -37,6 +49,10 @@ type NotesContextValue = {
 const noteSaveDelayMs = 400;
 const genericNotesError = "Something went wrong. Please try again.";
 const NotesContext = createContext<NotesContextValue | null>(null);
+
+function buildNotInClause(values: string[]) {
+  return `(${values.map((value) => JSON.stringify(value)).join(",")})`;
+}
 
 function logNotesError(error: unknown) {
   if (process.env.NODE_ENV !== "development") {
@@ -56,22 +72,40 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const { authStatus, user } = useAuth();
   const [notes, setNotes] = useState<Note[]>([]);
   const [status, setStatus] = useState<NotesStatus>("loading");
+  const [storageMode, setStorageMode] = useState<NotesStorageMode>("guest");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const notesRef = useRef<Note[]>([]);
   const ownerIdRef = useRef<string | null>(null);
   const saveTimersRef = useRef<Map<string, number>>(new Map());
+  const loadRunRef = useRef(0);
 
   const replaceNotes = useCallback((nextNotes: Note[]) => {
     const sortedNotes = sortNotes(nextNotes);
+
     notesRef.current = sortedNotes;
     setNotes(sortedNotes);
   }, []);
 
-  const updateLocalNotes = useCallback(
+  const updateNotesState = useCallback(
     (updater: (currentNotes: Note[]) => Note[]) => {
       setNotes((currentNotes) => {
         const nextNotes = sortNotes(updater(currentNotes));
+
         notesRef.current = nextNotes;
+
+        return nextNotes;
+      });
+    },
+    [],
+  );
+
+  const updateGuestNotesState = useCallback(
+    (updater: (currentNotes: Note[]) => Note[]) => {
+      setNotes((currentNotes) => {
+        const nextNotes = sortNotes(updater(currentNotes));
+
+        notesRef.current = nextNotes;
+        saveGuestNotes(nextNotes);
 
         return nextNotes;
       });
@@ -101,6 +135,14 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     setErrorMessage(genericNotesError);
   }, []);
 
+  const beginLoad = useCallback(() => {
+    const runId = loadRunRef.current + 1;
+
+    loadRunRef.current = runId;
+
+    return runId;
+  }, []);
+
   const requestNotes = useCallback(async (ownerId: string) => {
     let lastError: unknown = null;
 
@@ -126,95 +168,187 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     throw lastError;
   }, []);
 
-  const saveNoteNow = useCallback(async (note: Note) => {
-    const ownerId = ownerIdRef.current;
-
-    if (!ownerId) {
-      return;
+  const requestNoteItems = useCallback(async (noteIds: string[]) => {
+    if (noteIds.length === 0) {
+      return [] as NoteItemRecord[];
     }
 
-    clearQueuedSave(note.id);
-
-    const { error } = await supabase
-      .from("notes")
-      .update(buildNoteUpdateInput(note))
-      .eq("id", note.id)
-      .eq("owner_id", ownerId);
+    const { data, error } = await supabase
+      .from("note_items")
+      .select(noteItemRecordSelect)
+      .in("note_id", noteIds)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
 
     if (error) {
       throw error;
     }
-  }, [clearQueuedSave]);
 
-  const loadNotes = useCallback(
-    async (ownerId = ownerIdRef.current) => {
+    return (data ?? []) as NoteItemRecord[];
+  }, []);
+
+  const saveCloudNoteNow = useCallback(
+    async (note: Note) => {
+      const ownerId = ownerIdRef.current;
+
       if (!ownerId) {
-        clearAllQueuedSaves();
-        replaceNotes([]);
-        setErrorMessage(null);
-        setStatus("no-user");
+        return;
+      }
+
+      clearQueuedSave(note.id);
+
+      const { error: noteError } = await supabase
+        .from("notes")
+        .update(buildNoteUpdateInput(note))
+        .eq("id", note.id)
+        .eq("owner_id", ownerId);
+
+      if (noteError) {
+        throw noteError;
+      }
+
+      const itemRows = buildNoteItemUpsertInput(note);
+
+      if (itemRows.length === 0) {
+        const { error: deleteAllError } = await supabase
+          .from("note_items")
+          .delete()
+          .eq("note_id", note.id);
+
+        if (deleteAllError) {
+          throw deleteAllError;
+        }
 
         return;
       }
 
+      const { error: upsertError } = await supabase
+        .from("note_items")
+        .upsert(itemRows, { onConflict: "id" });
+
+      if (upsertError) {
+        throw upsertError;
+      }
+
+      const { error: deleteRemovedError } = await supabase
+        .from("note_items")
+        .delete()
+        .eq("note_id", note.id)
+        .not("id", "in", buildNotInClause(itemRows.map((item) => item.id)));
+
+      if (deleteRemovedError) {
+        throw deleteRemovedError;
+      }
+    },
+    [clearQueuedSave],
+  );
+
+  const loadGuestState = useCallback(async () => {
+    const runId = beginLoad();
+
+    clearAllQueuedSaves();
+    ownerIdRef.current = null;
+    setStatus("loading");
+    setStorageMode("guest");
+    setErrorMessage(null);
+
+    const guestNotes = loadGuestNotes();
+
+    if (loadRunRef.current !== runId) {
+      return;
+    }
+
+    replaceNotes(guestNotes);
+    setStatus("ready");
+  }, [beginLoad, clearAllQueuedSaves, replaceNotes]);
+
+  const loadCloudState = useCallback(
+    async (ownerId: string) => {
+      const runId = beginLoad();
+
       setStatus("loading");
+      setStorageMode("cloud");
       setErrorMessage(null);
 
       try {
-        const data = await requestNotes(ownerId);
+        const noteRows = await requestNotes(ownerId);
+        const itemRows = await requestNoteItems(noteRows.map((note) => note.id));
 
-        replaceNotes(data.map((row) => normalizeNoteRow(row)));
+        if (loadRunRef.current !== runId) {
+          return;
+        }
+
+        const noteItemsByNoteId = groupNoteItemsByNoteId(itemRows);
+
+        replaceNotes(
+          noteRows.map((noteRow) =>
+            normalizeCloudNote(noteRow, noteItemsByNoteId[noteRow.id]),
+          ),
+        );
         setStatus("ready");
       } catch (error) {
+        if (loadRunRef.current !== runId) {
+          return;
+        }
+
         clearAllQueuedSaves();
         replaceNotes([]);
         setStatus("error");
         handleSupabaseError(error);
       }
     },
-    [clearAllQueuedSaves, handleSupabaseError, replaceNotes, requestNotes],
+    [
+      beginLoad,
+      clearAllQueuedSaves,
+      handleSupabaseError,
+      replaceNotes,
+      requestNoteItems,
+      requestNotes,
+    ],
   );
 
-  const queueNoteSave = useCallback((note: Note) => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    clearQueuedSave(note.id);
-
-    const timeoutId = window.setTimeout(async () => {
-      saveTimersRef.current.delete(note.id);
-
-      try {
-        await saveNoteNow(note);
-      } catch (error) {
-        handleSupabaseError(error);
-        void loadNotes();
-      }
-    }, noteSaveDelayMs);
-
-    saveTimersRef.current.set(note.id, timeoutId);
-  }, [clearQueuedSave, handleSupabaseError, loadNotes, saveNoteNow]);
-
-  useEffect(() => {
+  const loadNotes = useCallback(async () => {
     if (authStatus === "loading") {
       setStatus("loading");
       return;
     }
 
-    if (!user?.id) {
-      ownerIdRef.current = null;
-      clearAllQueuedSaves();
-      replaceNotes([]);
-      setErrorMessage(null);
-      setStatus("no-user");
-
+    if (user?.id) {
+      ownerIdRef.current = user.id;
+      await loadCloudState(user.id);
       return;
     }
 
-    ownerIdRef.current = user.id;
-    void loadNotes(user.id);
-  }, [authStatus, clearAllQueuedSaves, loadNotes, replaceNotes, user?.id]);
+    await loadGuestState();
+  }, [authStatus, loadCloudState, loadGuestState, user?.id]);
+
+  const queueCloudSave = useCallback(
+    (note: Note) => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      clearQueuedSave(note.id);
+
+      const timeoutId = window.setTimeout(async () => {
+        saveTimersRef.current.delete(note.id);
+
+        try {
+          await saveCloudNoteNow(note);
+        } catch (error) {
+          handleSupabaseError(error);
+          void loadNotes();
+        }
+      }, noteSaveDelayMs);
+
+      saveTimersRef.current.set(note.id, timeoutId);
+    },
+    [clearQueuedSave, handleSupabaseError, loadNotes, saveCloudNoteNow],
+  );
+
+  useEffect(() => {
+    void loadNotes();
+  }, [loadNotes]);
 
   useEffect(
     () => () => {
@@ -225,14 +359,27 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const value: NotesContextValue = {
     createNote: async (title) => {
-      const ownerId = ownerIdRef.current;
       const nextTitle = title.trim();
 
-      if (!ownerId || !nextTitle) {
+      if (!nextTitle) {
         return null;
       }
 
       setErrorMessage(null);
+
+      if (storageMode === "guest") {
+        const nextNote = createGuestNote(nextTitle);
+
+        updateGuestNotesState((currentNotes) => [nextNote, ...currentNotes]);
+
+        return nextNote.id;
+      }
+
+      const ownerId = ownerIdRef.current;
+
+      if (!ownerId) {
+        return null;
+      }
 
       try {
         const { data, error } = await supabase
@@ -245,9 +392,9 @@ export function NotesProvider({ children }: { children: ReactNode }) {
           throw error;
         }
 
-        const nextNote = normalizeNoteRow(data);
+        const nextNote = normalizeCloudNote(data, undefined);
 
-        updateLocalNotes((currentNotes) => [nextNote, ...currentNotes]);
+        updateNotesState((currentNotes) => [nextNote, ...currentNotes]);
 
         return nextNote.id;
       } catch (error) {
@@ -257,19 +404,36 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       }
     },
     deleteNote: async (noteId) => {
+      setErrorMessage(null);
+      clearQueuedSave(noteId);
+
+      if (storageMode === "guest") {
+        updateGuestNotesState((currentNotes) =>
+          currentNotes.filter((note) => note.id !== noteId),
+        );
+        return;
+      }
+
       const ownerId = ownerIdRef.current;
 
       if (!ownerId) {
         return;
       }
 
-      setErrorMessage(null);
-      clearQueuedSave(noteId);
-      updateLocalNotes((currentNotes) =>
+      updateNotesState((currentNotes) =>
         currentNotes.filter((note) => note.id !== noteId),
       );
 
       try {
+        const { error: deleteItemsError } = await supabase
+          .from("note_items")
+          .delete()
+          .eq("note_id", noteId);
+
+        if (deleteItemsError) {
+          throw deleteItemsError;
+        }
+
         const { error } = await supabase
           .from("notes")
           .delete()
@@ -285,7 +449,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       }
     },
     errorMessage,
-    isUsingDevUser: false,
     notes,
     reloadNotes: loadNotes,
     renameNote: async (noteId, title) => {
@@ -303,19 +466,30 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       };
 
       setErrorMessage(null);
-      updateLocalNotes((currentNotes) =>
+
+      if (storageMode === "guest") {
+        updateGuestNotesState((currentNotes) =>
+          currentNotes.map((note) => (note.id === noteId ? nextNote : note)),
+        );
+        return;
+      }
+
+      updateNotesState((currentNotes) =>
         currentNotes.map((note) => (note.id === noteId ? nextNote : note)),
       );
 
       try {
-        await saveNoteNow(nextNote);
+        await saveCloudNoteNow(nextNote);
       } catch (error) {
         handleSupabaseError(error);
         await loadNotes();
       }
     },
     setNoteShared: (noteId, shared) => {
-      updateLocalNotes((currentNotes) =>
+      const updateState =
+        storageMode === "guest" ? updateGuestNotesState : updateNotesState;
+
+      updateState((currentNotes) =>
         currentNotes.map((note) =>
           note.id === noteId
             ? {
@@ -328,6 +502,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       );
     },
     status,
+    storageMode,
     togglePinned: async (noteId) => {
       const currentNote = notesRef.current.find((note) => note.id === noteId);
 
@@ -342,12 +517,20 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       };
 
       setErrorMessage(null);
-      updateLocalNotes((currentNotes) =>
+
+      if (storageMode === "guest") {
+        updateGuestNotesState((currentNotes) =>
+          currentNotes.map((note) => (note.id === noteId ? nextNote : note)),
+        );
+        return;
+      }
+
+      updateNotesState((currentNotes) =>
         currentNotes.map((note) => (note.id === noteId ? nextNote : note)),
       );
 
       try {
-        await saveNoteNow(nextNote);
+        await saveCloudNoteNow(nextNote);
       } catch (error) {
         handleSupabaseError(error);
         await loadNotes();
@@ -366,13 +549,18 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       };
 
       setErrorMessage(null);
-      updateLocalNotes((currentNotes) =>
+
+      if (storageMode === "guest") {
+        updateGuestNotesState((currentNotes) =>
+          currentNotes.map((note) => (note.id === noteId ? nextNote : note)),
+        );
+        return;
+      }
+
+      updateNotesState((currentNotes) =>
         currentNotes.map((note) => (note.id === noteId ? nextNote : note)),
       );
-
-      if (currentNote.title !== nextNote.title) {
-        queueNoteSave(nextNote);
-      }
+      queueCloudSave(nextNote);
     },
   };
 

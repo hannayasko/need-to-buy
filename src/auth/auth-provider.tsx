@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { ensureUserRecord } from "./ensure-user-record";
+import { getAuthRedirectUrl } from "@/lib/site-url";
 import { supabase } from "@/lib/supabase";
 
 export type AuthStatus = "loading" | "authenticated" | "signed-out";
@@ -116,6 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: getAuthRedirectUrl("/auth"),
+          },
         });
 
         return {

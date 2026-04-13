@@ -4,10 +4,10 @@ const defaultFontSize = 17;
 export const noteRecordSelect =
   "id, owner_id, title, is_pinned, created_at, updated_at";
 
-function createItem(text: string, index: number): NoteItem {
+function createItem(noteId: string, text: string, index: number): NoteItem {
   return {
-    checked: index === 0,
-    id: `item-${index + 1}`,
+    checked: false,
+    id: `${noteId}-item-${index + 1}`,
     text,
   };
 }
@@ -52,7 +52,13 @@ export function normalizeNoteRow(row: NoteRecord): Note {
     fontSize: defaultFontSize,
     id: typeof row.id === "string" && row.id.length > 0 ? row.id : `note-${createdAt}`,
     is_pinned: Boolean(row.is_pinned),
-    items: [createItem("", 0)],
+    items: [
+      createItem(
+        typeof row.id === "string" && row.id.length > 0 ? row.id : `note-${createdAt}`,
+        "",
+        0,
+      ),
+    ],
     listMode,
     shared: false,
     title: typeof row.title === "string" ? row.title : "",

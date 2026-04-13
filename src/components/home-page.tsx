@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useAuth } from "@/auth/auth-provider";
 import { useI18n } from "@/i18n/i18n-provider";
 import { useNotes } from "@/notes/notes-provider";
 import {
@@ -23,24 +24,26 @@ function previewItems(items: { text: string }[]) {
 }
 
 export function HomePage() {
+  const { authStatus } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
   const {
     createNote,
     deleteNote,
     errorMessage,
-    isUsingDevUser,
     notes,
     reloadNotes,
     renameNote,
     setNoteShared,
     status,
+    storageMode,
     togglePinned,
   } = useNotes();
   const [actionsNoteId, setActionsNoteId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [shareAuthOpen, setShareAuthOpen] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
 
   const selectedNote = useMemo(
@@ -106,8 +109,8 @@ export function HomePage() {
           <p className="app-accent-text text-sm font-medium">{t.home.eyebrow}</p>
           <h1 className="app-text mt-2 text-3xl font-semibold">{t.home.title}</h1>
           <p className="app-muted mt-3 text-base leading-7">{t.home.intro}</p>
-          {isUsingDevUser ? (
-            <p className="app-muted mt-2 text-sm leading-6">{t.home.devModeHint}</p>
+          {storageMode === "guest" ? (
+            <p className="app-muted mt-2 text-sm leading-6">{t.home.guestModeHint}</p>
           ) : null}
         </div>
 
@@ -124,24 +127,6 @@ export function HomePage() {
               <p className="app-muted mt-3 text-base leading-7">
                 {t.home.loadingBody}
               </p>
-            </div>
-          ) : null}
-
-          {status === "no-user" ? (
-            <div className="app-card rounded-lg px-4 py-6">
-              <h2 className="app-text text-lg font-semibold">
-                {t.home.authRequiredTitle}
-              </h2>
-              <p className="app-muted mt-3 text-base leading-7">
-                {t.home.authRequiredBody}
-              </p>
-              <button
-                className="app-primary-button mt-5 min-h-12 rounded-md px-4 text-base font-semibold outline-none transition focus:ring-2 focus:ring-[var(--focus-ring)]"
-                onClick={() => router.push("/auth")}
-                type="button"
-              >
-                {t.auth.openButton}
-              </button>
             </div>
           ) : null}
 
@@ -162,6 +147,11 @@ export function HomePage() {
           {status === "ready" && notes.length === 0 ? (
             <div className="app-card rounded-lg px-4 py-6">
               <p className="app-muted text-base leading-7">{t.home.emptyState}</p>
+              {storageMode === "guest" ? (
+                <p className="app-muted mt-3 text-sm leading-6">
+                  {t.home.emptyStateGuestHint}
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -251,11 +241,6 @@ export function HomePage() {
             className="app-primary-button flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md px-4 text-base font-semibold outline-none transition focus:ring-2 focus:ring-[var(--focus-ring)] disabled:opacity-50"
             disabled={status === "loading"}
             onClick={() => {
-              if (status === "no-user") {
-                router.push("/auth");
-                return;
-              }
-
               if (status !== "ready") {
                 return;
               }
@@ -266,7 +251,7 @@ export function HomePage() {
             type="button"
           >
             <PlusIcon />
-            <span>{status === "no-user" ? t.auth.openButton : t.home.newNote}</span>
+            <span>{t.home.newNote}</span>
           </button>
         </div>
       </div>
@@ -322,6 +307,12 @@ export function HomePage() {
             <button
               className="app-button flex min-h-14 w-full items-center gap-3 rounded-md px-4 py-3 text-left text-base font-medium outline-none transition focus:ring-2 focus:ring-[var(--focus-ring)]"
               onClick={() => {
+                if (authStatus !== "authenticated") {
+                  setActionsNoteId(null);
+                  setShareAuthOpen(true);
+                  return;
+                }
+
                 setNoteShared(selectedNote.id, true);
                 setActionsNoteId(null);
               }}
@@ -341,6 +332,37 @@ export function HomePage() {
             </button>
           </div>
         ) : null}
+      </MobileSheet>
+
+      <MobileSheet
+        onClose={() => setShareAuthOpen(false)}
+        open={shareAuthOpen}
+        title={t.home.shareRequiresAccountTitle}
+      >
+        <div className="space-y-4">
+          <p className="app-muted text-base leading-7">
+            {t.home.shareRequiresAccountBody}
+          </p>
+          <div className="flex gap-3">
+            <button
+              className="app-button min-h-12 flex-1 rounded-md px-4 text-base font-medium outline-none transition focus:ring-2 focus:ring-[var(--focus-ring)]"
+              onClick={() => setShareAuthOpen(false)}
+              type="button"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              className="app-primary-button min-h-12 flex-1 rounded-md px-4 text-base font-semibold outline-none transition focus:ring-2 focus:ring-[var(--focus-ring)]"
+              onClick={() => {
+                setShareAuthOpen(false);
+                router.push("/auth");
+              }}
+              type="button"
+            >
+              {t.home.shareRequiresAccountButton}
+            </button>
+          </div>
+        </div>
       </MobileSheet>
 
       <MobileSheet

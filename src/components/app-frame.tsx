@@ -4,9 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useI18n } from "@/i18n/i18n-provider";
-import { AuthActionButton } from "./auth-action-button";
-import { LanguageSwitcher } from "./language-switcher";
-import { ThemeToggle } from "./theme-toggle";
+import { SettingsSheet } from "./settings-sheet";
 
 export function AppFrame({ children }: { children: ReactNode }) {
   const { t } = useI18n();
@@ -34,11 +32,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <AuthActionButton />
-            <ThemeToggle />
-            <LanguageSwitcher />
-          </div>
+          <SettingsSheet />
         </div>
       </header>
 

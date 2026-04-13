@@ -27,7 +27,7 @@ export const en: Messages = {
     eyebrow: "Shared shopping notes",
     title: "Shopping Notes",
     intro:
-      "Keep groceries, household supplies, and refill runs in quick notes that are easy to open and update from your phone.",
+      "Keep groceries, household supplies, and refill runs in simple notes that are easy to update from your phone.",
     noteLabel: "List",
     openNote: "Open list",
     itemPreview: "Item preview",
@@ -56,6 +56,12 @@ export const en: Messages = {
     errorTitle: "We couldn't open your notes",
     errorBody: "Something went wrong. Please try again.",
     devModeHint: "You're using a local preview account.",
+    guestModeHint: "Notes stay on this device until you sign in to share them.",
+    emptyStateGuestHint: "Your notes stay here on this device until you decide to sign in.",
+    shareRequiresAccountTitle: "Sign in to share this note",
+    shareRequiresAccountBody:
+      "You can keep using notes without an account. Sign in or create one when you're ready to share with someone else.",
+    shareRequiresAccountButton: "Sign in or sign up",
   },
   editor: {
     backHome: "Back to lists",
@@ -106,7 +112,7 @@ export const en: Messages = {
     signOutLoading: "Signing out...",
     openButton: "Sign in",
     helper:
-      "After you sign in, your notes will appear here automatically.",
+      "You can keep using notes as a guest. Sign in when you want to share or keep them with your account.",
     signUpSuccessBody:
       "Your account is ready. If confirmation is required, check your inbox before signing in.",
     invalidCredentials:
@@ -120,6 +126,17 @@ export const en: Messages = {
     validationEmailInvalid: "Enter a valid email address.",
     validationPasswordRequired: "Enter your password.",
     validationPasswordLength: "Use at least 6 characters for your password.",
+  },
+  settings: {
+    account: "Account",
+    accountReady: "Signed in and ready for shared notes later.",
+    button: "Settings",
+    guestBody:
+      "You can keep writing notes without an account. Sign in when you want to share them.",
+    language: "Language",
+    signInCta: "Sign in or sign up",
+    theme: "Theme",
+    title: "Settings",
   },
   mockNote: {
     title: "Weekly groceries",

@@ -15,6 +15,7 @@ const themeStorageKey = "need-to-buy-theme";
 const themeChangeEvent = "need-to-buy-theme-change";
 
 type ThemeContextValue = {
+  setTheme: (theme: Theme) => void;
   theme: Theme;
   toggleTheme: () => void;
 };
@@ -91,6 +92,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ThemeContextValue>(
     () => ({
+      setTheme: (nextTheme) => setStoredTheme(nextTheme),
       theme,
       toggleTheme: () => setStoredTheme(theme === "light" ? "dark" : "light"),
     }),

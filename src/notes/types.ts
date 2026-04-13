@@ -15,6 +15,19 @@ export type NoteRecord = {
   updated_at: string;
 };
 
+export type NoteItemRecord = {
+  content: string;
+  created_at: string;
+  font_size: number;
+  id: string;
+  is_checked: boolean;
+  is_underlined: boolean;
+  item_type: string;
+  note_id: string;
+  sort_order: number;
+  updated_at: string;
+};
+
 export type Note = {
   createdAt: number;
   fontSize: number;
@@ -28,4 +41,6 @@ export type Note = {
   updatedAt: number;
 };
 
-export type NotesStatus = "loading" | "ready" | "no-user" | "error";
+export type NotesStatus = "loading" | "ready" | "error";
+
+export type NotesStorageMode = "guest" | "cloud";

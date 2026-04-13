@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { useI18n } from "@/i18n/i18n-provider";
 import { useNotes } from "@/notes/notes-provider";
@@ -58,7 +57,6 @@ function FormatButton({
 export function NoteEditor({ noteId }: { noteId: string }) {
   const { t } = useI18n();
   const { errorMessage, notes, reloadNotes, status, updateNote } = useNotes();
-  const router = useRouter();
   const [formatOpen, setFormatOpen] = useState(false);
 
   const note = useMemo(
@@ -76,36 +74,6 @@ export function NoteEditor({ noteId }: { noteId: string }) {
           <p className="app-muted mt-3 text-base leading-7">
             {t.editor.loadingBody}
           </p>
-        </div>
-      </section>
-    );
-  }
-
-  if (status === "no-user") {
-    return (
-      <section className="mx-auto w-full max-w-xl px-4 py-8">
-        <div className="app-card rounded-lg px-4 py-6">
-          <h1 className="app-text text-2xl font-semibold">
-            {t.editor.authRequiredTitle}
-          </h1>
-          <p className="app-muted mt-3 text-base leading-7">
-            {t.editor.authRequiredBody}
-          </p>
-          <div className="mt-5 flex gap-3">
-            <button
-              className="app-primary-button min-h-12 rounded-md px-4 text-base font-semibold outline-none transition focus:ring-2 focus:ring-[var(--focus-ring)]"
-              onClick={() => router.push("/auth")}
-              type="button"
-            >
-              {t.auth.openButton}
-            </button>
-            <Link
-              className="app-accent-text inline-flex min-h-12 items-center text-sm font-semibold"
-              href="/"
-            >
-              {t.editor.backHome}
-            </Link>
-          </div>
         </div>
       </section>
     );
